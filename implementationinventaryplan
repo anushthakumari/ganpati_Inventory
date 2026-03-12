@@ -1,0 +1,39 @@
+# Implementation Plan: Ganpati Hardware Frontend
+
+## Goal Description
+Build the frontend for a full-stack Inventory Management System for Ganpati Hardware. The application will track products across two shops, handle billing/POS, manage suppliers/purchases/customers, and provide a comprehensive dashboard. It will use React.js and vanilla CSS for a modern, rich aesthetic.
+
+## User Review Required
+No immediate changes require detailed review, but please confirm the technology choices (Vite + React, standard CSS) before I begin generating the scaffolding and layout code.
+
+## Proposed Changes
+
+### Setup Workspace
+- **[NEW] `frontend` directory**: Initialize a new React project using Vite (`npx create-vite frontend --template react`).
+- **[MODIFY] `frontend/package.json`**: Install required dependencies:
+  - `react-router-dom`: For client-side routing.
+  - `lucide-react`: For generic minimal icons (sidebar, dashboard cards).
+  - `recharts`: For dashboard analytics and charts.
+
+### Application Architecture
+- **[NEW] `frontend/src/App.jsx`**: Main application routing setup.
+- **[NEW] `frontend/src/components/layout/`**: `Sidebar.jsx`, `Header.jsx`, `MainLayout.jsx`.
+- **[NEW] `frontend/src/pages/`**:
+  - `Dashboard.jsx`: Overview of metrics, charts, alert summaries.
+  - `Products.jsx` & `ProductForm.jsx`: Manage sanitaryware, paints, tiles, marble, granite.
+  - `Inventory.jsx`: Track and transfer stock between Shop 1 and Shop 2.
+  - `Billing.jsx`: POS interface with fast search, GST, totals.
+  - `Suppliers.jsx` & `Purchases.jsx`: Supplier directory and purchase orders.
+  - `Customers.jsx`: Customer directory and history.
+  - `Reports.jsx`: End-of-day reports, top products, low stock.
+- **[NEW] `frontend/src/styles/`**: Dedicated CSS files (`index.css`, `layout.css`, `dashboard.css`, etc.) for building a premium, glassmorphism-inspired dark/light theme per the constraints.
+
+## Verification Plan
+
+### Automated Tests
+- Build verification: `npm run build` within `frontend/` to test standard compilation.
+
+### Manual Verification
+- View visual layout via `npm run dev` running locally.
+- Validate the premium and modern aesthetics of the dashboard and navigation.
+- Ensure all basic client-side routing works correctly.

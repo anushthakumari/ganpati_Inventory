@@ -1,0 +1,20 @@
+# Inventory Management System - Ganpati Hardware
+
+## Phase 1: Planning and Setup
+- [ ] Initialize React frontend project using Vite.
+- [ ] Setup project structure (components, pages, assets, styles).
+- [ ] Setup routing (React Router).
+- [ ] Setup Icons (Lucide React) and Charting library (Recharts).
+
+## Phase 2: Core Layout
+- [ ] Global Layout (Sidebar, Header).
+- [ ] Dashboard Page.
+- [ ] Login Interface.
+
+## Phase 3: Modules Implementation
+- [ ] Product Management (List, Add/Edit).
+- [ ] Inventory & Multi-Shop Tracking.
+- [ ] Billing / POS System.
+- [ ] Supplier & Purchase Management.
+- [ ] Customer Management.
+- [ ] Reports & Analytics Page.
