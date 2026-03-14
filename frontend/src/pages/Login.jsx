@@ -8,16 +8,21 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
       setError('Invalid email or password');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -59,8 +64,14 @@ const Login = () => {
             <a href="#" className="forgot-link">Forgot password?</a>
           </div>
           
-          <button type="submit" className="btn-primary w-full login-btn">
-            Sign In to Dashboard <ArrowRight size={18} />
+          <button type="submit" className="btn-primary w-full login-btn" disabled={isLoading}>
+            {isLoading ? (
+              <span className="flex-center gap-2">
+                <div className="spinner-small" /> Signing In...
+              </span>
+            ) : (
+              <>Sign In to Dashboard <ArrowRight size={18} /></>
+            )}
           </button>
         </form>
       </div>
