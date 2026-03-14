@@ -11,10 +11,20 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ganpati_inventory';
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected...'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const connectDB = require('./db');
+
+// Database middleware to ensure connection on every request (crucial for serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(503).json({ 
+      message: 'Database connection error', 
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Service Unavailable' 
+    });
+  }
+});
 
 // Routes
 const authRoutes = require('./routes/auth');
