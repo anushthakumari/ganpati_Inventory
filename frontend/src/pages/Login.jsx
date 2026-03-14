@@ -1,13 +1,24 @@
+import { useState } from 'react';
 import { Store, User, Lock, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Invalid email or password');
+    }
   };
 
   return (
@@ -24,11 +35,12 @@ const Login = () => {
         </div>
         
         <form className="login-form" onSubmit={handleLogin}>
+          {error && <div className="error-message" style={{color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center'}}>{error}</div>}
           <div className="form-group">
-            <label>Username or Email</label>
+            <label>Email</label>
             <div className="input-wrapper">
               <User size={18} className="input-icon" />
-              <input type="text" placeholder="admin@ganpati.com" required />
+              <input type="email" placeholder="admin@ganpati.com" required value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </div>
           
@@ -36,7 +48,7 @@ const Login = () => {
             <label>Password</label>
             <div className="input-wrapper">
               <Lock size={18} className="input-icon" />
-              <input type="password" placeholder="•••••••••" required />
+              <input type="password" placeholder="•••••••••" required value={password} onChange={e => setPassword(e.target.value)} />
             </div>
           </div>
           

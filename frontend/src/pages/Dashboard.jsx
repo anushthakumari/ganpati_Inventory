@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   ShoppingCart, 
@@ -7,26 +8,37 @@ import {
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import api from '../services/api';
 import './Dashboard.css';
 
-const salesData = [
-  { name: 'Mon', revenue: 4000, orders: 24 },
-  { name: 'Tue', revenue: 3000, orders: 18 },
-  { name: 'Wed', revenue: 5500, orders: 35 },
-  { name: 'Thu', revenue: 4500, orders: 28 },
-  { name: 'Fri', revenue: 6000, orders: 42 },
-  { name: 'Sat', revenue: 8000, orders: 55 },
-  { name: 'Sun', revenue: 7500, orders: 48 },
-];
-
-const topProducts = [
-  { id: 1, name: 'Premium Ceramic Tiles 2x2', category: 'Tiles', sales: 124, stock: 450 },
-  { id: 2, name: 'Asian Paints Apex 20L', category: 'Paints', sales: 85, stock: 32 },
-  { id: 3, name: 'Hindware Wash Basin', category: 'Sanitaryware', sales: 64, stock: 15 },
-  { id: 4, name: 'Italian Marble Slab', category: 'Marble', sales: 42, stock: 120 },
-];
-
 const Dashboard = () => {
+  const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, lowStockCount: 0, netProfit: 0 });
+  const [salesData, setSalesData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsData, chartData, productsData] = await Promise.all([
+          api.analytics.getStats(),
+          api.analytics.getSalesChart(),
+          api.analytics.getTopProducts()
+        ]);
+        setStats(statsData);
+        setSalesData(chartData);
+        setTopProducts(productsData);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <div className="dashboard"><h1>Loading Dashboard...</h1></div>;
+
   return (
     <div className="dashboard">
       <div className="page-header">
@@ -46,8 +58,8 @@ const Dashboard = () => {
           </div>
           <div className="stat-details">
             <h3>Total Revenue</h3>
-            <p className="stat-value">₹ 1,45,000</p>
-            <span className="stat-change positive">+12.5% vs yesterday</span>
+            <p className="stat-value">₹ {stats.totalRevenue.toLocaleString()}</p>
+            <span className="stat-change positive">Current Status</span>
           </div>
         </div>
         <div className="stat-card">
@@ -56,8 +68,8 @@ const Dashboard = () => {
           </div>
           <div className="stat-details">
             <h3>Total Orders</h3>
-            <p className="stat-value">154</p>
-            <span className="stat-change positive">+8.2% vs yesterday</span>
+            <p className="stat-value">{stats.totalOrders}</p>
+            <span className="stat-change positive">Lifetime</span>
           </div>
         </div>
         <div className="stat-card">
@@ -66,7 +78,7 @@ const Dashboard = () => {
           </div>
           <div className="stat-details">
             <h3>Low Stock</h3>
-            <p className="stat-value">12 Items</p>
+            <p className="stat-value">{stats.lowStockCount} Items</p>
             <span className="stat-change negative">Needs attention</span>
           </div>
         </div>
@@ -76,15 +88,15 @@ const Dashboard = () => {
           </div>
           <div className="stat-details">
             <h3>Net Profit</h3>
-            <p className="stat-value">₹ 42,500</p>
-            <span className="stat-change positive">+15.3% this week</span>
+            <p className="stat-value">₹ {stats.netProfit.toLocaleString()}</p>
+            <span className="stat-change positive">Estimated</span>
           </div>
         </div>
       </div>
 
       <div className="charts-grid">
         <div className="chart-card glass-panel chart-panel">
-          <h3>Revenue Overview</h3>
+          <h3>Revenue Overview (Last 7 Days)</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -122,6 +134,7 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {topProducts.length === 0 && <p className="text-muted">No sales yet.</p>}
           </div>
         </div>
       </div>

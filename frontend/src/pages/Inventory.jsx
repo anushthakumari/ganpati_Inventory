@@ -1,13 +1,30 @@
+import { useState } from 'react';
 import { ArrowRightLeft, Search, Filter } from 'lucide-react';
+import { useProducts } from '../hooks/useProducts';
 import './Products.css'; // Reusing table styles
 
-const mockInventory = [
-  { id: 1, name: 'Premium Ceramic Tiles 2x2', category: 'Tiles', stock1: 250, stock2: 200, total: 450, status: 'Healthy' },
-  { id: 2, name: 'Asian Paints Apex 20L', category: 'Paints', stock1: 22, stock2: 10, total: 32, status: 'Low in Shop 2' },
-  { id: 3, name: 'Hindware Wash Basin', category: 'Sanitaryware', stock1: 0, stock2: 15, total: 15, status: 'Out of Stock Shop 1' },
-];
-
 const Inventory = () => {
+  const { products, loading, error } = useProducts();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  if (loading) return <div className="products-page"><h1>Loading Inventory...</h1></div>;
+
+  const filteredItems = products
+    .filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      stock1: p.stockShop1 || 0,
+      stock2: p.stockShop2 || 0,
+      total: (p.stockShop1 || 0) + (p.stockShop2 || 0),
+      status: (p.stockShop1 + p.stockShop2 === 0) ? 'Out of Stock' : 
+              (p.stockShop1 + p.stockShop2 < 10) ? 'Low Stock' : 'Healthy'
+    }));
+
   return (
     <div className="products-page">
       <div className="page-header">
@@ -24,7 +41,7 @@ const Inventory = () => {
         <div className="table-controls">
           <div className="search-bar">
             <Search size={18} className="icon" />
-            <input type="text" placeholder="Search inventory..." />
+            <input type="text" placeholder="Search inventory..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <button className="btn-outline flex-center"><Filter size={18} /> Filter Status</button>
         </div>
@@ -43,7 +60,7 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {mockInventory.map((item) => (
+              {filteredItems.map((item) => (
                 <tr key={item.id}>
                   <td><div className="val-primary">{item.name}</div></td>
                   <td><span className="badge-outline">{item.category}</span></td>
@@ -62,6 +79,13 @@ const Inventory = () => {
                   </td>
                 </tr>
               ))}
+              {filteredItems.length === 0 && (
+                <tr>
+                   <td colSpan="7" style={{textAlign: 'center', padding: '2rem', color: 'var(--text-muted)'}}>
+                    No inventory items found matching your search.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

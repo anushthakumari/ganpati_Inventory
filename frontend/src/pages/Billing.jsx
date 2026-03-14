@@ -1,13 +1,81 @@
-import { useState } from 'react';
-import { Search, Trash2, Printer, CreditCard, Banknote, Smartphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Trash2, Printer, CreditCard, Banknote, Smartphone, Save } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import './Billing.css';
 
 const Billing = () => {
-  const [cart, setCart] = useState([
-    { id: 1, name: 'Premium Ceramic Tiles 2x2', price: 850, qty: 10, gst: 18 },
-    { id: 2, name: 'Asian Paints Apex 20L', price: 3200, qty: 1, gst: 18 }
-  ]);
+  const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [customer, setCustomer] = useState({ name: '', phone: '', address: '', gstin: '' });
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSuggestions, setCustomerSuggestions] = useState([]);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const editingId = searchParams.get('edit');
+
+  useEffect(() => {
+    if (editingId) {
+      const loadInvoice = async () => {
+        try {
+          const invoices = await api.invoices.getAll();
+          const invoice = invoices.find(i => i.id === editingId);
+          if (invoice) {
+            setCart(invoice.items.map(item => ({ ...item, id: item.productId || item.id })));
+            setCustomer(invoice.customer);
+            setPaymentMethod(invoice.paymentMethod);
+          }
+        } catch (err) {
+          console.error('Error loading invoice:', err);
+        }
+      };
+      loadInvoice();
+    }
+  }, [editingId]);
+
+  const handleSearch = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 2) {
+      const allProducts = await api.products.getAll();
+      setSearchResults(allProducts.filter(p => p.name.toLowerCase().includes(query.toLowerCase())));
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleCustomerSearch = async (e) => {
+    const query = e.target.value;
+    setCustomerSearch(query);
+    if (query.length > 2) {
+      const allCustomers = await api.customers.getAll();
+      setCustomerSuggestions(allCustomers.filter(c => 
+        c.name.toLowerCase().includes(query.toLowerCase()) || 
+        c.phone.includes(query)
+      ));
+    } else {
+      setCustomerSuggestions([]);
+    }
+  };
+
+  const selectCustomer = (c) => {
+    setCustomer({ name: c.name, phone: c.phone, address: c.address || '', gstin: c.gstin || '' });
+    setCustomerSearch('');
+    setCustomerSuggestions([]);
+  };
+
+  const addToCart = (product) => {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      setCart(cart.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
+    } else {
+      setCart([...cart, { ...product, productId: product.id, qty: 1, gst: 18 }]);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
   const updateQty = (id, newQty) => {
     setCart(cart.map(item => item.id === id ? { ...item, qty: newQty } : item));
@@ -19,6 +87,47 @@ const Billing = () => {
   const totalGst = cart.reduce((acc, item) => acc + ((item.price * item.qty) * (item.gst / 100)), 0);
   const total = subtotal + totalGst;
 
+  const handleFinalize = async (status = 'finalized') => {
+    if (cart.length === 0) return alert('Cart is empty');
+    try {
+      // Check if customer exists, if not and has phone, save it
+      if (customer.phone && status === 'finalized') {
+        const allCustomers = await api.customers.getAll();
+        const exists = allCustomers.find(c => c.phone === customer.phone);
+        if (!exists) {
+          await api.customers.add(customer);
+        }
+      }
+
+      const invoiceData = {
+        customer,
+        items: cart,
+        subtotal,
+        totalGst,
+        grandTotal: total,
+        paymentMethod,
+        status
+      };
+      
+      if (editingId) {
+        await api.invoices.update(editingId, invoiceData);
+        alert(status === 'draft' ? 'Draft updated!' : 'Invoice finalized!');
+      } else {
+        await api.invoices.create(invoiceData);
+        alert(status === 'draft' ? 'Draft saved!' : 'Invoice created!');
+      }
+      
+      if (status === 'finalized') {
+        setCart([]);
+        setCustomer({ name: '', phone: '', address: '', gstin: '' });
+        if (editingId) navigate('/billing');
+      }
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      alert('Failed to save invoice');
+    }
+  };
+
   return (
     <div className="billing-page">
       <div className="billing-main">
@@ -27,7 +136,23 @@ const Billing = () => {
             <h2>New Invoice</h2>
             <div className="pos-search">
               <Search size={18} className="pos-search-icon" />
-              <input type="text" placeholder="Scan barcode or search product..." autoFocus />
+              <input type="text" placeholder="Search product..." value={searchQuery} onChange={handleSearch} />
+              {searchResults.length > 0 && (
+                <div className="search-dropdown">
+                  {searchResults.map(p => (
+                    <div key={p.id} className="search-result-item" onClick={() => addToCart(p)}>
+                      <div className="item-info">
+                        <span className="item-name">{p.name}</span>
+                        <span className="item-meta">{p.category} | {p.brand}</span>
+                      </div>
+                      <div className="item-price-stock">
+                        <span className="price">₹{p.price}</span>
+                        <span className="stock">{p.stock} in stock</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -63,14 +188,39 @@ const Billing = () => {
       <div className="billing-sidebar flex-col">
         <div className="glass-panel customer-panel">
           <h3 className="panel-title">Customer Details</h3>
-          <div className="form-group mb-2">
-            <input type="text" placeholder="Customer Phone / Name" className="full-input" />
+          <div className="pos-search mb-2" style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+             <Search size={16} className="pos-search-icon" style={{ opacity: 0.6 }} />
+             <input 
+              type="text" 
+              placeholder="Search existing customer..." 
+              style={{ fontSize: '0.9rem' }}
+              value={customerSearch}
+              onChange={handleCustomerSearch}
+             />
+             {customerSuggestions.length > 0 && (
+                <div className="search-dropdown" style={{ top: 'calc(100% + 5px)' }}>
+                  {customerSuggestions.map(c => (
+                    <div key={c.id} className="search-result-item" onClick={() => selectCustomer(c)}>
+                      <div className="item-info">
+                        <span className="item-name">{c.name}</span>
+                        <span className="item-meta">{c.phone}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+             )}
           </div>
           <div className="form-group mb-2">
-            <input type="text" placeholder="Address (Optional)" className="full-input" />
+            <input type="text" placeholder="Customer Name" className="full-input" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
+          </div>
+          <div className="form-group mb-2">
+            <input type="text" placeholder="Phone" className="full-input" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} />
+          </div>
+          <div className="form-group mb-2">
+            <input type="text" placeholder="Address (Optional)" className="full-input" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} />
           </div>
           <div className="form-group">
-            <input type="text" placeholder="GSTIN (Optional)" className="full-input" />
+            <input type="text" placeholder="GSTIN (Optional)" className="full-input" value={customer.gstin} onChange={e => setCustomer({...customer, gstin: e.target.value})} />
           </div>
         </div>
 
@@ -110,10 +260,12 @@ const Billing = () => {
           </div>
 
           <div className="billing-actions">
-            <button className="btn-secondary w-full">Save Draft / Add to Ongoing Bill</button>
-            <button className="btn-primary w-full shadow-glow flex-center justify-center">
-              <Printer size={18}/> Finalize & Print Invoice
-            </button>
+                <button className="btn-secondary w-full flex-center justify-center" onClick={() => handleFinalize('draft')}>
+                  <Save size={18}/> {editingId ? 'Update Udhaar (Draft)' : 'Save as Udhaar (Draft)'}
+                </button>
+                <button className="btn-primary w-full shadow-glow flex-center justify-center" onClick={() => handleFinalize('finalized')}>
+                  <Printer size={18}/> {editingId ? 'Pay & Finalize' : 'Pay & Finalize Invoice'}
+                </button>
           </div>
         </div>
       </div>

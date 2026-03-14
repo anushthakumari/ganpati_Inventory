@@ -6,7 +6,8 @@ import {
   Receipt, 
   Users, 
   Truck,
-  BarChart3
+  BarChart3,
+  ShoppingCart
 } from 'lucide-react';
 import './Sidebar.css'; 
 
@@ -15,7 +16,8 @@ const Sidebar = () => {
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
     { label: 'Products', icon: <Package size={20} />, path: '/products' },
     { label: 'Inventory', icon: <Store size={20} />, path: '/inventory' },
-    { label: 'Billing / POS', icon: <Receipt size={20} />, path: '/billing' },
+    { label: 'Invoices', icon: <Receipt size={20} />, path: '/invoices' },
+    { label: 'Billing / POS', icon: <ShoppingCart size={20} />, path: '/billing' },
     { label: 'Suppliers', icon: <Truck size={20} />, path: '/suppliers' },
     { label: 'Customers', icon: <Users size={20} />, path: '/customers' },
     { label: 'Reports', icon: <BarChart3 size={20} />, path: '/reports' },
