@@ -1,7 +1,7 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://ganpati-inventory.vercel.app/api';
 
 // Toggle this to switch between Mock and Live
-const IS_MOCK = false; 
+const IS_MOCK = false;
 
 const mockData = {
   products: [
@@ -73,7 +73,7 @@ const api = {
     },
     delete: async (id) => {
       if (IS_MOCK) return true;
-      const response = await fetch(`${API_BASE_URL}/products/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: 'DELETE',
         headers: getHeaders()
       });
