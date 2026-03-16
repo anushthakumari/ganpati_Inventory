@@ -6,6 +6,9 @@ const invoiceItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   qty: { type: Number, required: true },
   gst: { type: Number, default: 18 },
+  length: { type: Number },
+  width: { type: Number },
+  pieces: { type: Number },
 });
 
 const paymentEntrySchema = new mongoose.Schema({

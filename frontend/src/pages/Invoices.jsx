@@ -173,6 +173,28 @@ const Invoices = () => {
                         <td colSpan="9" style={{ padding: 0 }}>
                           <div style={{ padding: '1rem', paddingLeft: '4rem', background: 'rgba(255,255,255,0.02)' }}>
                             <h5 style={{ margin: '0 0 0.75rem', color: 'var(--text-muted)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Item Details
+                            </h5>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1.5rem' }}>
+                              {(inv.items || []).map((item, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: 600 }}>{item.name}</span>
+                                    {item.length && (
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>
+                                        Size: {item.length}" x {item.width}" @ {item.pieces} pcs
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.qty} {item.length ? 'Sq Ft' : 'pcs'}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>@ ₹{item.price.toFixed(2)}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <h5 style={{ margin: '0 0 0.75rem', color: 'var(--text-muted)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                               Payment History ({(inv.payments || []).length} entries)
                             </h5>
                             {(!inv.payments || inv.payments.length === 0) ? (

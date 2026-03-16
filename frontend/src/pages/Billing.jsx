@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Printer, CreditCard, Banknote, Smartphone, Save } from 'lucide-react';
+import { Search, Trash2, Printer, CreditCard, Banknote, Smartphone, Save, X } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './Billing.css';
@@ -13,9 +13,43 @@ const Billing = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
+  const [dimensionModal, setDimensionModal] = useState({ isOpen: false, product: null, length: '', width: '', pieces: '1' });
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const editingId = searchParams.get('edit');
+
+  const closeDimensionModal = () => setDimensionModal({ isOpen: false, product: null, length: '', width: '', pieces: '1' });
+
+  const handleDimensionSubmit = (e) => {
+    e.preventDefault();
+    const { product, length, width, pieces } = dimensionModal;
+    const L = parseFloat(length);
+    const W = parseFloat(width);
+    const P = parseInt(pieces);
+    
+    if (isNaN(L) || isNaN(W) || isNaN(P) || L <= 0 || W <= 0 || P <= 0) {
+      return alert("Please enter valid dimensions.");
+    }
+
+    // Area calculation (Assuming price is per Sq Ft and dimensions are in Inches)
+    // Area in Sq Ft = (L * W * P) / 144
+    const totalArea = (L * W * P) / 144;
+    const roundedArea = parseFloat(totalArea.toFixed(2));
+
+    const itemToAdd = {
+      ...product,
+      productId: product.id,
+      qty: roundedArea,
+      gst: 18,
+      length: L,
+      width: W,
+      pieces: P,
+      isGranite: true
+    };
+
+    setCart([...cart, itemToAdd]);
+    closeDimensionModal();
+  };
 
   useEffect(() => {
     if (editingId) {
@@ -24,7 +58,11 @@ const Billing = () => {
           const invoices = await api.invoices.getAll();
           const invoice = invoices.find(i => i.id === editingId);
           if (invoice) {
-            setCart(invoice.items.map(item => ({ ...item, id: item.productId || item.id })));
+            setCart(invoice.items.map(item => ({ 
+              ...item, 
+              id: item.productId || item.id,
+              isGranite: !!item.length 
+            })));
             setCustomer(invoice.customer);
             setPaymentMethod(invoice.paymentMethod);
           }
@@ -68,6 +106,12 @@ const Billing = () => {
   };
 
   const addToCart = (product) => {
+    if (product.category === 'Granite') {
+      setDimensionModal({ isOpen: true, product, length: '', width: '', pieces: '1' });
+      setSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
     const existing = cart.find(item => item.id === product.id);
     if (existing) {
       setCart(cart.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
@@ -184,7 +228,14 @@ const Billing = () => {
               <div key={item.id} className="cart-item">
                 <div className="item-details">
                   <h4>{item.name}</h4>
-                  <span className="text-muted">GST: {item.gst}%</span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span className="text-muted">GST: {item.gst}%</span>
+                    {item.isGranite && (
+                      <span className="badge-outline" style={{ fontSize: '0.7rem', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+                        {item.length}" x {item.width}" @ {item.pieces} pcs
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="item-price">₹{item.price.toFixed(2)}</div>
                 <div className="item-qty">
@@ -309,7 +360,76 @@ const Billing = () => {
           </div>
         </div>
       </div>
+
+      {/* Granite Dimension Modal */}
+      {dimensionModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="glass-panel modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0 }}>Granite Dimensions</h3>
+              <button className="btn-icon" onClick={closeDimensionModal}><X size={20} /></button>
+            </div>
+            
+            <form onSubmit={handleDimensionSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-muted)' }}>Product</p>
+                <div className="val-primary" style={{ fontSize: '1.1rem' }}>{dimensionModal.product?.name}</div>
+              </div>
+
+              <div className="responsive-grid-3">
+                <div className="form-group">
+                  <label>Length (in)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    placeholder="L" 
+                    required 
+                    value={dimensionModal.length} 
+                    onChange={e => setDimensionModal({...dimensionModal, length: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Width (in)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    placeholder="W" 
+                    required 
+                    value={dimensionModal.width} 
+                    onChange={e => setDimensionModal({...dimensionModal, width: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Pieces</label>
+                  <input 
+                    type="number" 
+                    placeholder="Pcs" 
+                    required 
+                    value={dimensionModal.pieces} 
+                    onChange={e => setDimensionModal({...dimensionModal, pieces: e.target.value})} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ padding: '1rem', background: 'var(--bg-light)', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Calculated Area</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
+                  {dimensionModal.length && dimensionModal.width && dimensionModal.pieces ? 
+                    ((parseFloat(dimensionModal.length) * parseFloat(dimensionModal.width) * parseInt(dimensionModal.pieces)) / 144).toFixed(2) : '0.00'
+                  } <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Sq Ft</span>
+                </div>
+              </div>
+
+              <div className="form-actions-end">
+                <button type="button" className="btn-secondary" onClick={closeDimensionModal}>Cancel</button>
+                <button type="submit" className="btn-primary">Add to Cart</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default Billing;
