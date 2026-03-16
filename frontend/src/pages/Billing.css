@@ -309,3 +309,44 @@
 .justify-center {
   justify-content: center;
 }
+@media (max-width: 1024px) {
+  .billing-page {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .billing-sidebar {
+    width: 100%;
+  }
+
+  .pos-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .cart-header {
+    display: none; /* Hide confusing headers on mobile */
+  }
+
+  .cart-item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 
+      "name name"
+      "price qty"
+      "total delete";
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .item-details { grid-area: name; }
+  .item-price { grid-area: price; }
+  .item-qty { grid-area: qty; justify-self: end; }
+  .item-total { grid-area: total; }
+  .item-remove { grid-area: delete; justify-self: end; }
+
+  .grand-total {
+    font-size: 1.5rem;
+  }
+}

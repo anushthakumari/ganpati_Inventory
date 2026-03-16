@@ -58,6 +58,18 @@
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* Z-Index Hierarchy */
+  --z-sidebar: 100;
+  --z-header: 50;
+  --z-modal: 1000;
+  --z-overlay: 90;
 }
 
 /* Scrollbar customizations */

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import './Sidebar.css'; 
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
     { label: 'Products', icon: <Package size={20} />, path: '/products' },
@@ -26,7 +26,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
         <div className="logo-icon">GH</div>
         <span className="logo-text">Ganpati Hardware</span>
@@ -38,6 +38,7 @@ const Sidebar = () => {
               <NavLink 
                 to={item.path} 
                 className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}
+                onClick={onClose}
               >
                 {item.icon}
                 <span>{item.label}</span>

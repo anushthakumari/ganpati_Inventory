@@ -190,10 +190,12 @@ const Billing = () => {
                 <div className="item-qty">
                   <input type="number" min="1" value={item.qty} onChange={(e) => updateQty(item.id, parseInt(e.target.value) || 1)} />
                 </div>
-                <div className="item-total">₹{(item.price * item.qty).toFixed(2)}</div>
-                <button className="btn-icon danger" onClick={() => removeItem(item.id)}>
-                  <Trash2 size={16}/>
-                </button>
+                <div className="item-total">₹ {(item.price * item.qty).toFixed(2)}</div>
+                <div className="item-remove">
+                  <button className="btn-icon danger" onClick={() => removeItem(item.id)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
             {cart.length === 0 && <div className="empty-cart">Cart is empty. Search products to add.</div>}

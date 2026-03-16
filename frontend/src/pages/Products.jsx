@@ -173,9 +173,9 @@ const Products = () => {
               {formData.inventoryLocations.length === 0 ? (
                 <p className="text-muted" style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>No inventory locations added. Add one to track stock.</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {formData.inventoryLocations.map((loc, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                    <div key={index} className="allocation-row">
                       <div className="form-group" style={{ marginBottom: 0, flex: 2 }}>
                         <select 
                           value={loc.shopId} 

@@ -1,11 +1,11 @@
-import { Search, Bell, User, LogOut, Package, ArrowRight } from 'lucide-react';
+import { Search, Bell, User, LogOut, Package, ArrowRight, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +57,9 @@ const Header = () => {
 
   return (
     <header className="header">
+      <button className="menu-toggle" onClick={onMenuClick}>
+        <Menu size={24} />
+      </button>
       <div className="header-search" ref={searchRef}>
         <Search size={18} className="search-icon" />
         <input

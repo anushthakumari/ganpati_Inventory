@@ -196,3 +196,47 @@
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+.menu-toggle {
+  display: none;
+  color: var(--text-primary);
+  background: transparent;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background 0.2s;
+}
+
+.menu-toggle:hover {
+  background: var(--border-light);
+}
+
+@media (max-width: 1024px) {
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-search {
+    width: auto;
+    flex: 1;
+    max-width: 400px;
+    margin: 0 0.5rem;
+  }
+
+  .profile-info {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-search {
+    display: none; /* Hide main search on very small screens to save space, or use icon-only toggle */
+  }
+}
