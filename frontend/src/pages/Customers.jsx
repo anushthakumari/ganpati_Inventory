@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, UserPlus, Edit, Trash2, X, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, UserPlus, Edit, Trash2, X } from 'lucide-react';
 import { useCustomers } from '../hooks/useCustomers';
 import api from '../services/api';
 import './Products.css';
@@ -9,12 +9,28 @@ const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [invoiceBalances, setInvoiceBalances] = useState({}); // phone -> outstanding
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
     creditBalance: 0
   });
+
+  // Load invoices to compute outstanding balance per customer (matched by phone)
+  useEffect(() => {
+    api.invoices.getAll().then(invoices => {
+      const balances = {};
+      invoices.forEach(inv => {
+        const phone = inv.customer?.phone;
+        if (phone && inv.status !== 'fully_paid') {
+          const due = (inv.grandTotal || 0) - (inv.amountPaid || 0);
+          balances[phone] = (balances[phone] || 0) + due;
+        }
+      });
+      setInvoiceBalances(balances);
+    }).catch(() => {});
+  }, []);
 
   if (loading) return <div className="products-page"><h1>Loading Customers...</h1></div>;
 
@@ -132,7 +148,7 @@ const Customers = () => {
                 <th>Customer Name</th>
                 <th>Phone Number</th>
                 <th>Address</th>
-                <th>Credit Balance</th>
+                <th>Outstanding Balance</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -143,9 +159,14 @@ const Customers = () => {
                   <td>{c.phone}</td>
                   <td>{c.address || 'N/A'}</td>
                   <td>
-                    <span style={{color: (c.creditBalance > 0) ? 'var(--danger)' : 'var(--success)', fontWeight: 600}}>
-                      ₹ {c.creditBalance || 0}
-                    </span>
+                    {(() => {
+                      const outstanding = invoiceBalances[c.phone] || 0;
+                      return (
+                        <span style={{ color: outstanding > 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
+                          ₹ {outstanding.toFixed(2)}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td>
                     <div className="action-buttons">

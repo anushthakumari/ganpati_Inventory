@@ -10,6 +10,7 @@ import Suppliers from './pages/Suppliers';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
+import Shops from './pages/Shops';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="shops" element={<Shops />} />
             <Route path="reports" element={<Reports />} />
             <Route path="invoices" element={<Invoices />} />
             <Route path="*" element={<div style={{padding: '2rem'}}>Page under construction</div>} />

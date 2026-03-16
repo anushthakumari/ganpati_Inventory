@@ -8,4 +8,4 @@ const supplierSchema = new mongoose.Schema({
   pendingBalance: { type: Number, default: 0 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Supplier', supplierSchema);
+module.exports = mongoose.models.Supplier || mongoose.model('Supplier', supplierSchema);

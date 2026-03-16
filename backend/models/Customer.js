@@ -7,4 +7,4 @@ const customerSchema = new mongoose.Schema({
   creditBalance: { type: Number, default: 0 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Customer', customerSchema);
+module.exports = mongoose.models.Customer || mongoose.model('Customer', customerSchema);

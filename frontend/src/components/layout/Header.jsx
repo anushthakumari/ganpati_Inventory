@@ -29,7 +29,7 @@ const Header = () => {
     if (query.length > 2) {
       try {
         const allProducts = await api.products.getAll();
-        const filtered = allProducts.filter(p => 
+        const filtered = allProducts.filter(p =>
           p.name.toLowerCase().includes(query.toLowerCase()) ||
           p.category.toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
@@ -59,11 +59,11 @@ const Header = () => {
     <header className="header">
       <div className="header-search" ref={searchRef}>
         <Search size={18} className="search-icon" />
-        <input 
-          type="text" 
-          placeholder="Search products, orders..." 
-          value={searchQuery} 
-          onChange={handleSearch} 
+        <input
+          type="text"
+          placeholder="Search products, orders..."
+          value={searchQuery}
+          onChange={handleSearch}
           onFocus={() => searchQuery.length > 2 && setShowResults(true)}
         />
         {showResults && searchResults.length > 0 && (
@@ -85,10 +85,6 @@ const Header = () => {
         )}
       </div>
       <div className="header-actions">
-        <button className="icon-btn">
-          <Bell size={20} />
-          <span className="badge">0</span>
-        </button>
         <div className="profile">
           <div className="avatar">
             <User size={18} />

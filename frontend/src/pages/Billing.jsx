@@ -8,6 +8,7 @@ const Billing = () => {
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '', gstin: '' });
+  const [initialPayment, setInitialPayment] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
@@ -91,7 +92,7 @@ const Billing = () => {
     if (cart.length === 0) return alert('Cart is empty');
     try {
       // Check if customer exists, if not and has phone, save it
-      if (customer.phone && status === 'finalized') {
+      if (customer.phone) {
         const allCustomers = await api.customers.getAll();
         const exists = allCustomers.find(c => c.phone === customer.phone);
         if (!exists) {
@@ -99,14 +100,28 @@ const Billing = () => {
         }
       }
 
+      // Determine effective status based on initial payment
+      const paid = parseFloat(initialPayment) || 0;
+      let effectiveStatus = status;
+      if (status !== 'draft') {
+        if (paid <= 0) effectiveStatus = 'finalized'; // Fully on credit
+        else if (paid >= total) effectiveStatus = 'fully_paid';
+        else effectiveStatus = 'partially_paid';
+      }
+
+      // Collect payments array for initial upfront payment
+      const initialPayments = paid > 0 ? [{ amount: paid, method: paymentMethod, note: 'Initial payment' }] : [];
+
       const invoiceData = {
         customer,
         items: cart,
         subtotal,
         totalGst,
         grandTotal: total,
+        amountPaid: paid,
+        payments: initialPayments,
         paymentMethod,
-        status
+        status: effectiveStatus
       };
       
       if (editingId) {
@@ -117,14 +132,15 @@ const Billing = () => {
         alert(status === 'draft' ? 'Draft saved!' : 'Invoice created!');
       }
       
-      if (status === 'finalized') {
+      if (status !== 'draft') {
         setCart([]);
         setCustomer({ name: '', phone: '', address: '', gstin: '' });
+        setInitialPayment(0);
         if (editingId) navigate('/billing');
       }
     } catch (error) {
       console.error('Error saving invoice:', error);
-      alert('Failed to save invoice');
+      alert(`Failed to save invoice: ${error.message}`);
     }
   };
 
@@ -242,6 +258,28 @@ const Billing = () => {
           <div className="summary-row total">
             <span>Grand Total</span>
             <span className="grand-total">₹{total.toFixed(2)}</span>
+          </div>
+
+          {/* Upfront Payment Field */}
+          <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount Paid Now (₹)</div>
+            <input
+              type="number"
+              min="0"
+              max={total}
+              placeholder="0.00"
+              value={initialPayment || ''}
+              onChange={e => setInitialPayment(e.target.value)}
+              style={{ width: '100%', background: 'transparent', border: 'none', fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent)', outline: 'none', padding: 0 }}
+            />
+            {parseFloat(initialPayment) > 0 && parseFloat(initialPayment) < total && (
+              <div style={{ fontSize: '0.85rem', color: 'var(--warning)', marginTop: '0.25rem' }}>
+                Balance due: ₹{(total - parseFloat(initialPayment)).toFixed(2)}
+              </div>
+            )}
+            {parseFloat(initialPayment) >= total && (
+              <div style={{ fontSize: '0.85rem', color: 'var(--success)', marginTop: '0.25rem' }}>✓ Fully paid</div>
+            )}
           </div>
 
           <div className="payment-methods" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>

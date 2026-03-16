@@ -5,12 +5,15 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true },
   brand: { type: String, required: true },
   sizeVariant: { type: String },
-  unit: { type: String, default: 'Piece' },
   purchasePrice: { type: Number, required: true },
   sellingPrice: { type: Number, required: true },
-  stockShop1: { type: Number, default: 0 },
-  stockShop2: { type: Number, default: 0 },
+  inventoryLocations: [{
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
+    shopName: { type: String, required: true },
+    stock: { type: Number, default: 0 },
+    unit: { type: String, required: true }
+  }],
   minAlertQty: { type: Number, default: 10 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);

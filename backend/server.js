@@ -33,6 +33,7 @@ const customerRoutes = require('./routes/customers');
 const supplierRoutes = require('./routes/suppliers');
 const invoiceRoutes = require('./routes/invoices');
 const analyticsRoutes = require('./routes/analytics');
+const shopRoutes = require('./routes/shops');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -40,6 +41,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/shops', shopRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

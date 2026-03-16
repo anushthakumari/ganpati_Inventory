@@ -24,10 +24,11 @@ async function connectDB() {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false, // Fail fast if connection is not ready
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      family: 4 // Use IPv4, skip trying IPv6
+      bufferCommands: true, // Allow commands to buffer for a short while during connection
+      autoIndex: process.env.NODE_ENV === 'development', // Don't build indexes in production
+      serverSelectionTimeoutMS: 10000, // Timeout after 10s
+      socketTimeoutMS: 45000,
+      family: 4
     };
 
     console.log('Connecting to MongoDB...');

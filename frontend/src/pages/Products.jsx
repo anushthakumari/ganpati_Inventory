@@ -1,46 +1,78 @@
 import { useState } from 'react';
-import { Plus, Search, Filter, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, X } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
+import { useShops } from '../hooks/useShops';
 import api from '../services/api';
 import './Products.css';
 
 const Products = () => {
-  const { products, loading, error, setProducts } = useProducts();
+  const { products, loading: productsLoading, setProducts } = useProducts();
+  const { shops, loading: shopsLoading } = useShops();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     category: 'Sanitaryware',
     brand: '',
     sizeVariant: '',
-    unit: 'Piece',
     purchasePrice: '',
     sellingPrice: '',
-    stockShop1: 0,
-    stockShop2: 0,
+    inventoryLocations: [],
     minAlertQty: 10
   });
+
+  const resetForm = () => {
+    setFormData({
+      name: '', category: 'Sanitaryware', brand: '', sizeVariant: '',
+      purchasePrice: '', sellingPrice: '', inventoryLocations: [], minAlertQty: 10
+    });
+    setEditingId(null);
+    setShowForm(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const newProduct = await api.products.add(formData);
-      // Map for display
-      const displayProduct = {
-        ...newProduct,
-        id: newProduct._id || newProduct.id,
-        price: newProduct.sellingPrice,
-        stock: (newProduct.stockShop1 || 0) + (newProduct.stockShop2 || 0),
-        shop: (newProduct.stockShop1 > 0 && newProduct.stockShop2 > 0) ? 'Shop 1 & 2' : (newProduct.stockShop1 > 0 ? 'Shop 1' : 'Shop 2')
-      };
-      setProducts([displayProduct, ...products]);
-      setShowForm(false);
-      setFormData({
-        name: '', category: 'Sanitaryware', brand: '', sizeVariant: '', unit: 'Piece',
-        purchasePrice: '', sellingPrice: '', stockShop1: 0, stockShop2: 0, minAlertQty: 10
-      });
+      if (editingId) {
+        const updatedProduct = await api.products.update(editingId, formData);
+        const displayProduct = {
+          ...updatedProduct,
+          id: updatedProduct._id || updatedProduct.id,
+          price: updatedProduct.sellingPrice,
+          stock: (updatedProduct.stockShop1 || 0) + (updatedProduct.stockShop2 || 0),
+          shop: (updatedProduct.stockShop1 > 0 && updatedProduct.stockShop2 > 0) ? 'Shop 1 & 2' : (updatedProduct.stockShop1 > 0 ? 'Shop 1' : 'Shop 2')
+        };
+        setProducts(products.map(p => p.id === editingId ? displayProduct : p));
+      } else {
+        const newProduct = await api.products.add(formData);
+        const displayProduct = {
+          ...newProduct,
+          id: newProduct._id || newProduct.id,
+          price: newProduct.sellingPrice,
+          stock: (newProduct.stockShop1 || 0) + (newProduct.stockShop2 || 0),
+          shop: (newProduct.stockShop1 > 0 && newProduct.stockShop2 > 0) ? 'Shop 1 & 2' : (newProduct.stockShop1 > 0 ? 'Shop 1' : 'Shop 2')
+        };
+        setProducts([displayProduct, ...products]);
+      }
+      resetForm();
     } catch (err) {
-      console.error('Error adding product:', err);
+      console.error('Error saving product:', err);
     }
+  };
+
+  const handleEdit = (product) => {
+    setFormData({
+      name: product.name || '',
+      category: product.category || 'Sanitaryware',
+      brand: product.brand || '',
+      sizeVariant: product.sizeVariant || '',
+      purchasePrice: product.purchasePrice || '',
+      sellingPrice: product.price || product.sellingPrice || '',
+      inventoryLocations: product.inventoryLocations || [],
+      minAlertQty: product.minAlertQty || 10
+    });
+    setEditingId(product.id);
+    setShowForm(true);
   };
 
   const handleDelete = async (id) => {
@@ -56,13 +88,42 @@ const Products = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredProducts = products.filter(p => 
+  const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.brand.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (loading) return <div className="products-page"><h1>Loading Products...</h1></div>;
+  const handleAddLocation = () => {
+    setFormData({
+      ...formData,
+      inventoryLocations: [
+        ...formData.inventoryLocations,
+        { shopId: '', shopName: '', stock: 0, unit: 'Piece' }
+      ]
+    });
+  };
+
+  const handleUpdateLocation = (index, field, value) => {
+    const updatedLocations = [...formData.inventoryLocations];
+    
+    if (field === 'shopId') {
+      const selectedShop = shops.find(s => s.id === value);
+      updatedLocations[index].shopId = value;
+      updatedLocations[index].shopName = selectedShop ? selectedShop.name : '';
+    } else {
+      updatedLocations[index][field] = value;
+    }
+    
+    setFormData({ ...formData, inventoryLocations: updatedLocations });
+  };
+
+  const handleRemoveLocation = (index) => {
+    const updatedLocations = formData.inventoryLocations.filter((_, i) => i !== index);
+    setFormData({ ...formData, inventoryLocations: updatedLocations });
+  };
+
+  if (productsLoading || shopsLoading) return <div className="products-page"><h1>Loading...</h1></div>;
 
   return (
     <div className="products-page">
@@ -71,47 +132,100 @@ const Products = () => {
           <h1>Products Inventory</h1>
           <p className="text-muted">Manage your hardware, paints, tiles, and sanitaryware</p>
         </div>
-        <button className="btn-primary flex-center" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-primary flex-center" onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }}>
           <Plus size={18} /> {showForm ? 'Cancel' : 'Add New Product'}
         </button>
       </div>
 
       {showForm && (
         <div className="glass-panel form-panel">
-          <h3>Add New Product</h3>
+          <h3>{editingId ? 'Edit Product' : 'Add New Product'}</h3>
           <form className="product-form" onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group"><label>Product Name</label>
-                <input type="text" placeholder="Enter product name..." required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <input type="text" placeholder="Enter product name..." required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
               <div className="form-group"><label>Category</label>
-                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                   <option>Sanitaryware</option><option>Paints</option>
                   <option>Tiles</option><option>Marble</option><option>Granite</option>
                 </select>
               </div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Brand</label><input type="text" placeholder="Brand name" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} /></div>
-              <div className="form-group"><label>Size / Variant</label><input type="text" placeholder="e.g. 2x2, 20L" value={formData.sizeVariant} onChange={e => setFormData({...formData, sizeVariant: e.target.value})} /></div>
-              <div className="form-group"><label>Unit</label>
-                <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
-                  <option>Piece</option><option>Box</option><option>Litre</option><option>Sq ft</option>
-                </select>
+              <div className="form-group"><label>Brand</label><input type="text" placeholder="Brand name" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} /></div>
+              <div className="form-group"><label>Size / Variant</label><input type="text" placeholder="e.g. 2x2, 20L" value={formData.sizeVariant} onChange={e => setFormData({ ...formData, sizeVariant: e.target.value })} /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Purchase Price (₹)</label><input type="number" placeholder="0.00" value={formData.purchasePrice} onChange={e => setFormData({ ...formData, purchasePrice: e.target.value })} /></div>
+              <div className="form-group"><label>Selling Price (₹)</label><input type="number" placeholder="0.00" value={formData.sellingPrice} onChange={e => setFormData({ ...formData, sellingPrice: e.target.value })} /></div>
+              <div className="form-group"><label>Min Alert Qty</label><input type="number" placeholder="10" value={formData.minAlertQty} onChange={e => setFormData({ ...formData, minAlertQty: parseInt(e.target.value) || 10 })} /></div>
+            </div>
+
+            <div className="inventory-allocations" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-light)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h4 style={{ margin: 0 }}>Inventory Locations</h4>
+                <button type="button" className="btn-outline flex-center" onClick={handleAddLocation} style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                  <Plus size={14} /> Add Location
+                </button>
               </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group"><label>Purchase Price (₹)</label><input type="number" placeholder="0.00" value={formData.purchasePrice} onChange={e => setFormData({...formData, purchasePrice: e.target.value})} /></div>
-              <div className="form-group"><label>Selling Price (₹)</label><input type="number" placeholder="0.00" value={formData.sellingPrice} onChange={e => setFormData({...formData, sellingPrice: e.target.value})} /></div>
-            </div>
-            <div className="form-row">
-              <div className="form-group"><label>Stock Shop 1</label><input type="number" placeholder="0" value={formData.stockShop1} onChange={e => setFormData({...formData, stockShop1: parseInt(e.target.value) || 0})} /></div>
-              <div className="form-group"><label>Stock Shop 2</label><input type="number" placeholder="0" value={formData.stockShop2} onChange={e => setFormData({...formData, stockShop2: parseInt(e.target.value) || 0})} /></div>
-              <div className="form-group"><label>Min Alert Qty</label><input type="number" placeholder="10" value={formData.minAlertQty} onChange={e => setFormData({...formData, minAlertQty: parseInt(e.target.value) || 10})} /></div>
+              
+              {formData.inventoryLocations.length === 0 ? (
+                <p className="text-muted" style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>No inventory locations added. Add one to track stock.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {formData.inventoryLocations.map((loc, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                      <div className="form-group" style={{ marginBottom: 0, flex: 2 }}>
+                        <select 
+                          value={loc.shopId} 
+                          onChange={(e) => handleUpdateLocation(index, 'shopId', e.target.value)}
+                          required
+                        >
+                          <option value="">Select Shop...</option>
+                          {shops.map(shop => (
+                            <option key={shop.id} value={shop.id}>{shop.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                        <input 
+                          type="number" 
+                          placeholder="Qty" 
+                          value={loc.stock} 
+                          onChange={(e) => handleUpdateLocation(index, 'stock', parseInt(e.target.value) || 0)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                        <select 
+                          value={loc.unit} 
+                          onChange={(e) => handleUpdateLocation(index, 'unit', e.target.value)}
+                        >
+                          <option value="Piece">Piece</option>
+                          <option value="Box">Box</option>
+                          <option value="Litre">Litre</option>
+                          <option value="Sq ft">Sq ft</option>
+                          <option value="Meter">Meter</option>
+                          <option value="Kg">Kg</option>
+                        </select>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="btn-icon danger" 
+                        onClick={() => handleRemoveLocation(index)}
+                        style={{ padding: '0.6rem', height: '100%' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="form-actions-end">
-              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-              <button type="submit" className="btn-primary">Save Product</button>
+              <button type="button" className="btn-secondary" onClick={resetForm}>Cancel</button>
+              <button type="submit" className="btn-primary">{editingId ? 'Update Product' : 'Save Product'}</button>
             </div>
           </form>
         </div>
@@ -155,16 +269,15 @@ const Products = () => {
                   <td>{p.shop}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-icon"><Edit size={16} /></button>
+                      <button className="btn-icon" onClick={() => handleEdit(p)}><Edit size={16} /></button>
                       <button className="btn-icon danger" onClick={() => handleDelete(p.id)}><Trash2 size={16} /></button>
-                      <button className="btn-icon"><MoreVertical size={16} /></button>
                     </div>
                   </td>
                 </tr>
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan="7" style={{textAlign: 'center', padding: '2rem', color: 'var(--text-muted)'}}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                     No products found matching your search.
                   </td>
                 </tr>
